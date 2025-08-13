@@ -260,6 +260,61 @@
 
     // Accessibility: focus first required field on load
     window.addEventListener('load', ()=> document.getElementById('studentName').focus());
+document.getElementById('regForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const form = e.target;
+
+  // WhatsApp number validation
+  const phoneFields = ['fatherWhats','motherWhats'];
+  for (const id of phoneFields) {
+    const el = document.getElementById(id);
+    if (!/^[0-9]{8,15}$/.test(el.value.trim())) {
+      el.focus();
+      showMessage('Please enter a valid WhatsApp number (8–15 digits) for ' + el.previousElementSibling.textContent, true);
+      return;
+    }
+  }
+
+  // Declaration check
+  if (!document.getElementById('declaration').checked) {
+    showMessage('You must agree to the declaration before submitting.', true);
+    return;
+  }
+
+  // Collect data
+  const data = new FormData(form);
+
+  // Disable submit button to prevent double submission
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
+
+  // Send to Google Apps Script
+  fetch(WEB_APP_URL, {
+    method: 'POST',
+    body: data
+  })
+  .then(response => response.json())
+  .then(res => {
+    if (res.result === "success") {
+      form.reset();
+      document.getElementById('photoPreview').style.display = 'none';
+      document.getElementById('screenshotPreview').style.display = 'none';
+      showMessage('✅ Registration submitted successfully!', false);
+    } else {
+      throw new Error(res.error || "Unknown error");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showMessage('❌ Failed to submit: ' + err.message, true);
+  })
+  .finally(() => {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit registration";
+  });
+});
+
   </script>
 </body>
 </html>
